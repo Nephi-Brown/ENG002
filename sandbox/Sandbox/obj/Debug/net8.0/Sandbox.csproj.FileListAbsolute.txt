@@ -1,0 +1,15 @@
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/bin/Debug/net8.0/Sandbox
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/bin/Debug/net8.0/Sandbox.deps.json
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/bin/Debug/net8.0/Sandbox.runtimeconfig.json
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/bin/Debug/net8.0/Sandbox.dll
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/bin/Debug/net8.0/Sandbox.pdb
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/obj/Debug/net8.0/Sandbox.GeneratedMSBuildEditorConfig.editorconfig
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/obj/Debug/net8.0/Sandbox.AssemblyInfoInputs.cache
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/obj/Debug/net8.0/Sandbox.AssemblyInfo.cs
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/obj/Debug/net8.0/Sandbox.csproj.CoreCompileInputs.cache
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/obj/Debug/net8.0/Sandbox.sourcelink.json
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/obj/Debug/net8.0/Sandbox.dll
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/obj/Debug/net8.0/refint/Sandbox.dll
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/obj/Debug/net8.0/Sandbox.pdb
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/obj/Debug/net8.0/Sandbox.genruntimeconfig.cache
+/Users/nephibrown/Documents/C# Code/cse210/sandbox/Sandbox/obj/Debug/net8.0/ref/Sandbox.dll
