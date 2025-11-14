@@ -1,0 +1,249 @@
+from machine import I2C, PWM, Pin
+import time
+from vl53l0x import VL53L0X
+
+
+matrix = [[0 for _ in range(50)] for _ in range(50)]
+for i in range(50):
+    for j in range(50):
+        if i == 0 or i == 50 or j == 0 or j == 50: 
+            matrix[i][j] = 11
+            
+
+import time
+
+
+
+
+
+
+x, y = 1, 1  
+
+def print_matrix():
+    for i in range(len(matrix)):
+        row = ""
+        for j in range(len(matrix[i])):
+            if i == x and j == y:
+                row += " R "   
+            else:
+                row += f"{matrix[i][j]:2} "
+        print(row)
+    print()
+    
+    
+# -- Motor Setup --
+
+# - Left Motor -
+DIR1 = Pin(0, Pin.OUT)
+PWM1 = Pin(Pin(1))
+PWM1.freq(20000)
+
+def LMotor_Forward(speed):
+    DIR1.value(1)
+    PWM.duty_u16(speed)
+    
+def LMotor_Reverse(speed):
+    DIR1.value(0)
+    PWM.duty_u16(speed)
+    
+def LMotor_Stop():
+    PWM1.duty_u16(0)
+
+
+# - Right Motor DIR/PWM -
+DIR2 = Pin(2, Pin.OUT)
+PWM2 = Pin(Pin(3))
+PWM2.freq(20000)
+    
+def RMotor_Forward(speed):
+    DIR2.value(1)
+    PWM2.duty_u16(speed)
+
+def RMotor_Reverse(speed):
+    DIR2.value(0)
+    PWM2.duty_u16(speed)
+    
+def RMotor_Stop():
+    PWM2.duty_u16(0)
+    
+
+
+
+# - Speed Parameters -
+
+AvSpd = 20000
+MinSpd = 10000
+MaxSpd = 30000
+
+
+
+
+
+#front ToF Calibrartion
+i2c = I2C(1, sda=Pin(6), scl=Pin(7), freq=400_000)
+tof = VL53L0X(i2c, address=0x29)
+tof.start_continuous()
+
+SAMPLE_HZ = 10
+DELAY = 1 / SAMPLE_HZ
+
+# >>> Change this to the distance you want in millimeters <<<
+THRESHOLD_MM = 100
+
+
+    
+
+def wallcheckDiLeft():
+   
+    sensor = Pin(15, Pin.IN)  #set GPIO-25 pin mode as INPUT
+
+    if sensor.value() == 0:  #read the value of the sensor pin and compare it with 0
+        matrix[x][y-1] = 0
+    elif sensor.value() == 1:
+        matrix[x][y-1] = 11
+        
+def wallcheckDiright():
+
+    sensor = Pin(0, Pin.IN)  #set GPIO-25 pin mode as INPUT
+
+    if sensor.value() == 0:  #read the value of the sensor pin and compare it with 0
+        matrix[x][y+1] = 0
+    elif sensor.value() == 1:
+        matrix[x][y+1] = 11
+        
+
+    
+def turnleft():
+    RMotor_Foward()
+    LMotor_Reverse()
+    time_sleep()
+    RMotor_Stop()
+    LMotor_Stop()
+    
+    
+def turnright():
+    LMotor_Foward()
+    RMotor_Reverse()
+    time_sleep()
+    RMotor_Stop()
+    LMotor_Stop()
+        
+
+def wallcheckstraight():
+     d_mm = tof.read_range()
+
+     if d_mm > 0 and d_mm <= THRESHOLD_MM:
+        matrix[x-1][y] = 11
+     else:
+        matrix[x-1][y] = 0 
+
+        
+def movefoward():
+    global x, y
+    
+    if matrix[x-1][y] != 11:  
+        RMotor_Foward()
+        LMotor_Foward()
+        x -= 1
+    if matrix[x-1][y] == 11:
+         RMotor_Stop
+         LMotor_Stop
+    if matrix[x+1][y] == 0:
+        matrix[x+1][y] = 2
+    elif matrix[x+1][y] == 2:
+        matrix[x+1][y] = 4
+    else:
+        matrix[x+1][y] = matrix[x+2][y] + 2
+
+
+def moveleft():
+    global x, y
+    if matrix[x][y-1] != 11:
+        
+        RMotor_Foward
+        LMotor_Foward
+        y -= 1
+    if matrix[x][y+1] == 0:
+        matrix[x][y+1] = 2
+    elif matrix[x][y+1] == 2:
+        matrix[x][y+1] = 4
+    else:
+        matrix[x][y+1] = matrix[x][y+1] + 2
+
+def moveright():
+    global x, y
+    if matrix[x][y+1] != 11:
+        y += 1
+    if matrix[x][y-1] == 0:
+        matrix[x][y-1] = 2
+    elif matrix[x][y-1] == 2:
+        matrix[x][y-1] = 4
+    else:
+        matrix[x][y-1] = matrix[x][y-1] + 2
+    
+def centering():
+   
+
+
+
+
+
+         
+    def lookaround():
+        global x, y , movepos, cell_left, cell_right, cell_below, cell_infront
+    
+
+        cell_infront = matrix[x-1][y]
+        cell_right = matrix[x][y+1]
+        cell_left = matrix[x][y-1]
+    
+        movepos = [
+        (cell_right, 'right'),
+        (cell_left, 'left'),
+        (cell_infront, 'foward')
+    ]
+
+
+        movepos.sort()
+    
+    
+     
+    
+def pathfind():
+     global x, y, movepos, cell_left, cell_right, cell_infront
+     lookaround()
+     
+     value, direction = movepos[0]
+     
+     
+     
+     if direction == 'foward':
+         movefoward()
+     elif direction == 'right':
+         moveright()
+     elif direction == 'left':
+         moveleft()
+        
+         
+    
+
+
+
+while True:
+    
+    for i in range(100):
+        wallcheckleft()
+        wallcheckright()
+        wallchekstraight()
+        lookaround()
+        pathfind()
+        time_sleep()
+        
+        
+             
+    
+    
+    
+         
+    
+    
