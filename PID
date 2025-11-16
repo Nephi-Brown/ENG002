@@ -1,0 +1,50 @@
+import time
+
+class PIDController:
+    def __init__(self, kp, ki, kd, setpoint=0):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.setpoint = setpoint
+        self.previous_error = 0
+        self.integral = 0
+    
+    def compute(self, current_value, dt):
+        error = self.setpoint - current_value
+        
+        proportional = self.kp * error
+        
+        self.integral += error * dt
+        integral = self.ki * self.integral
+        
+        derivative = 0 if dt == 0 else self.kd * (error - self.previous_error) / dt
+        
+        self.previous_error = error
+        
+        return proportional + integral + derivative
+
+
+
+
+process_variable = 0
+
+pid_A = PIDController(kp=1.5, ki=1.0, kd=0.1, setpoint=5)
+pid_B = PIDController(kp=1.5, ki=1.0, kd=0.1, setpoint=5)
+
+# This input variable will be used by BOTH PID loops
+input_variable = 0
+
+while True:
+    dt = 0.1
+    
+    control_A = pid_A.compute(input_variable, dt)
+    control_B = pid_B.compute(input_variable, dt)
+
+    # Convert PID outputs to PWM style values (0-100%)
+    duty_A = max(0, min(control_A, 100))
+    duty_B = max(0, min(control_B, 100))
+
+    pwm_A.ChangeDutyCycle(duty_A)
+    pwm_B.ChangeDutyCycle(duty_B)
+   
+    time.sleep(dt)
