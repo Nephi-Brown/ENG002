@@ -59,10 +59,10 @@ def Left_Motor_Set(speed):
     speed = _clamp(speed, -Max_PWM, Max_PWM)
     if speed <= 0:
         DIR1.value(1)
-        PWM1.duty_u16(_clamp(speed))
+        PWM1.duty_u16(_clamp(speed, 0, Max_PWM))
     else:
         DIR1.value(0)
-        PWM1.duty_u16(_clamp(-speed))
+        PWM1.duty_u16(_clamp(-speed, 0, Max_PWM))
         
 # - Right Motor Control -
 def Right_Motor_Set(speed):
@@ -70,10 +70,10 @@ def Right_Motor_Set(speed):
     speed = _clamp(speed, -Max_PWM, Max_PWM)
     if speed <= 0:
         DIR2.value(1)
-        PWM2.duty_u16(_clamp(speed))
+        PWM2.duty_u16(_clamp(speed, 0, Max_PWM))
     else:
         DIR2.value(0)
-        PWM2.duty_u16(_clamp(-speed))
+        PWM2.duty_u16(_clamp(-speed, 0, Max_PWM))
         
 # - Motor Stop -
 def Motor_Stop():
@@ -198,7 +198,7 @@ def setup_vl6180x_on_bus(i2c, label):
 
 # ===== I2C / Soft I2C Setup =====
 
-# - Find ToF Sensors -
+# - Find ToF Sensors - 
 i2c_forward = I2C(1, sda=Pin(18), scl=Pin(19), freq=400000)
 i2c_left    = SoftI2C(sda=Pin(20), scl=Pin(21), freq=400000)
 i2c_right   = SoftI2C(sda=Pin(26), scl=Pin(27), freq=400000)
