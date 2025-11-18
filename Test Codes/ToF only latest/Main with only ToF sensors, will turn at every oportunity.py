@@ -9,11 +9,10 @@ from vl6180x import VL6180X
 
 # - PWM Settings -
 Max_PWM = 65535
-Limit_Max_PWM = 25000
 Min_PWM = 10000
 Target_RPS = 15
 
-# - Centering Settings
+# - Centering Settings -
 PID_Interval = 0.05
 Center_Gain = 150
 Max_Steer = 5000 
@@ -35,6 +34,7 @@ Drive_Long = 100
 Drive_Medium = 75
 Drive_Short = 50
 Drive_Micro = 25
+Drive_Nano = 1
 
 # - Finish Detection -
 Finish_Tolerance = 0.1
@@ -94,17 +94,18 @@ def Right_Turn(speed=Turn_Speed, duration=Turn_Time):
     time.sleep(duration)
     Motor_Stop()
     
-About_Turn = 0
+About_Turn_Count = 0
 
 def About_Turn():
+    global About_Turn_Count
     Left_Turn()
     time.sleep(0.1)
     Left_Turn()
     time.sleep(0.1)
-    About_Turn += 1
+    About_Turn_Count += 1
     
 
-# ===== Encoder Seup =====
+# ===== Encoder Setup =====
 
 # - Left Motor Encoder -
 Left_Encoder_A = Pin(12, Pin.IN, Pin.PULL_UP)
@@ -119,7 +120,7 @@ Left_Encoder_Count = 0
 Left_Previous_Count = Left_Encoder_A.value()
 
 Right_Encoder_Count = 0
-Right_Previous_Count = Left_Encoder_A.value()
+Right_Previous_Count = Right_Encoder_A.value()
 
 # - Left Encoder Control - 
 def Left_Encoder(pin):
@@ -197,7 +198,7 @@ def setup_vl6180x_on_bus(i2c, label):
 
 # ===== I2C / Soft I2C Setup =====
 
-# - Find ToF Sensors -
+# - Find ToF Sensors - 
 i2c_forward = I2C(1, sda=Pin(18), scl=Pin(19), freq=400000)
 i2c_left    = SoftI2C(sda=Pin(20), scl=Pin(21), freq=400000)
 i2c_right   = SoftI2C(sda=Pin(26), scl=Pin(27), freq=400000)
@@ -255,7 +256,7 @@ def PID_Drive_Step(left_mm, right_mm):
     global last_L, last_R, last_time, Left_Encoder_Count, Right_Encoder_Count
     
     now = time.ticks_ms()
-    dt = time.ticks_diff(now, last_time) / 500.0
+    dt = time.ticks_diff(now, last_time) / 1000.0
     
     if dt < PID_Interval:
         return
@@ -310,7 +311,7 @@ def Drive_Forward_Centering_mm(dist_mm):
     
     while True:
         dL = abs(Left_Encoder_Count - Start_L)
-        dR = abs(Right_Enconder_Count - Start_R)
+        dR = abs(Right_Encoder_Count - Start_R)
         Average_Counts = (dL + dR) / 2.0
         if Average_Counts >= Target_Counts:
             break
@@ -332,7 +333,7 @@ def PID_Drive_Step_No_Centering(dist_mm):
     global last_L, last_R, last_time, Left_Encoder_Count, Right_Encoder_Count
     
     now = time.ticks_ms()
-    dt = time.ticks_diff(now, last_time) / 500.0
+    dt = time.ticks_diff(now, last_time) / 1000.0
     
     if dt < PID_Interval:
         return
@@ -359,19 +360,19 @@ def PID_Drive_Step_No_Centering(dist_mm):
     
     # - Read Front -
     initial_front_mm = Read_Front_mm()
-    move_forward_to_mm = (inital_front_mm - dist_mm)
+    move_forward_to_mm = (initial_front_mm - dist_mm)
     
     while True:
         dL = abs(Left_Encoder_Count - Start_L)
-        dR = abs(Right_Enconder_Count - Start_R)
+        dR = abs(Right_Encoder_Count - Start_R)
         Average_Counts = (dL + dR) / 2.0
         if Average_Counts >= Target_Counts:
             break
         
+        front_mm = Read_Front_mm()
+        
         if 0 < front_mm <= Min_Front_Dist:
             break
-        
-        front_mm = Read_Front_mm()
         
         if front_mm >= move_forward_to_mm:
             time.sleep(0.01)
@@ -379,17 +380,25 @@ def PID_Drive_Step_No_Centering(dist_mm):
             time.sleep(0.01)
             break
 
-        
     Motor_Stop()
+    
+# - Drive Until Xmm Front -    
+def Drive_Until_Front(target1):
+    while True:
+        front_mm = Read_Front_mm()
+        if 0 < front_mm <= target1:
+            Motor_Stop()
+        else:
+            PID_Drive_Step_No_Centering(Drive_Nano)
 
 
 # ===== Finish Area =====
 front_turn_history = []  # list of distances after front-caused turns
 
-def Record_Front_Turn_Distance(d_mm):
-    if d_mm <= 0:
+def Record_Front_Turn_Distance(front_mm):
+    if front_mm <= 0:
         return
-    front_turn_history.append(d_mm)
+    front_turn_history.append(front_mm)
     if len(front_turn_history) > 3:
         front_turn_history.pop(0)
 
@@ -402,7 +411,7 @@ def Finish_Condition():
         return False
 
     def within(x):
-        return abs(x - avg) <= FINISH_TOLERANCE * avg
+        return abs(x - avg) <= Finish_Tolerance * avg
 
     return within(a) and within(b) and within(c)
 
@@ -428,7 +437,7 @@ def Finish_Sequence():
 
     # 2) Turn 90° left
     print("Finish: Turn 90 left")
-    Turn_Left_90()
+    Left_Turn()
     time.sleep(0.1)
 
     # 3) New front distance
@@ -439,7 +448,7 @@ def Finish_Sequence():
 
     # 4) Drive half of that
     print("Finish: drive", half2, "mm forward")
-    Drive_Forward_mm(half2)
+    PID_Drive_Step_No_Centering(half2)
 
     # 5) Spin left 3 times on the spot
     print("Finish: spin left 3x")
@@ -468,7 +477,7 @@ def Handle_Front_Wall(front_mm):
         Record_Front_Turn_Distance(new_front)
         
         if 0 < new_front <= Min_Front_Dist:
-            Turn_Left()
+            Left_Turn()
         else:
             break
         
@@ -499,7 +508,7 @@ def Right_Turn_Detected():
 Left_Count = 0
 
 def Left_Turn_Detected():
-    global Right_Count
+    global Left_Count
     
     Left_Count += 1
     
@@ -531,50 +540,55 @@ try:
             Handle_Front_Wall(front_mm)
             continue
         
-        if About_Turn >= 1:
+        if About_Turn_Count >= 1:
             if Right_Turn_Count > 1:
                 if (left_mm - 25) > 100:
                     Motor_Stop()
                     PID_Drive_Step_No_Centering(Drive_Short)
                     Left_Turn_Detected()
                     PID_Drive_Step_No_Centering(Drive_Micro)
-                    Right_Turn_Count -= 1:
-                    About_Turn -= 1:
+                    Right_Turn_Count -= 1
+                    About_Turn_Count -= 1
+                else:
+                    continue
             elif Left_Turn_Count > 1:
                 if (right_mm - 25) > 100:
                     Motor_Stop()
                     PID_Drive_Step_No_Centering(Drive_Short)
                     Right_Turn_Detected()
                     PID_Drive_Step_No_Centering(Drive_Micro)
-                    Left_Turn_Count -= 1:
-                    About_Turn -= 1:
-            else
-            PID_Drive_Step(left_mm, right_mm)
+                    Left_Turn_Count -= 1
+                    About_Turn_Count -= 1
+                else:
+                    continue
+            else:
+                PID_Drive_Step(left_mm, right_mm)
                         
-        if (right_mm - 25) > 100:
+        elif (right_mm - 25) > 100:
             Right_Turn_Count += 1
             PID_Drive_Step_No_Centering(Drive_Short)
             if (left_mm - 25) > 100:
                 Left_Turn_Count += 1
                 PID_Drive_Step_No_Centering(Drive_Far)
-            else
-            PID_Drive_Step_No_Centering(Drive_Far)
+            else:
+                PID_Drive_Step_No_Centering(Drive_Far)
                 if 0 < front_mm <= Min_Front_Dist:
                     PID_Drive_Step(left_mm, right_mm)
                     
-        if (left_mm - 25) > 100:
+        elif (left_mm - 25) > 100:
             Left_Turn_Count += 1
             PID_Drive_Step_No_Centering(Drive_Short)
-            if (Right_mm - 25) > 100:
+            if (right_mm - 25) > 100:
                 Right_Turn_Count += 1
                 PID_Drive_Step_No_Centering(Drive_Far)
-            else
-            PID_Drive_Step_No_Centering(Drive_Far)
+            else:
+                PID_Drive_Step_No_Centering(Drive_Far)
                 if 0 < front_mm <= Min_Front_Dist:
                     PID_Drive_Step(left_mm, right_mm)
-        else
-        PID_Drive_Step(left_mm, right_mm)
-        time.sleep(0.01)
+        else:
+            PID_Drive_Step(left_mm, right_mm)
+            time.sleep(0.01)
+            print("{},{},{}".format(front_mm, left_mm, right_mm))
         
 except KeyboardInterrupt:
     print("Stopped by user.")
@@ -589,3 +603,4 @@ finally:
         
 
         
+
