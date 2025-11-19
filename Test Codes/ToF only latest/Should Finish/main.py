@@ -1,4 +1,4 @@
-# This code is not complete, requires: mapping; turn adjustments to value / gain etc; Logic error in code in final run statement, home test showed it to get stuck when reaching a wall
+# This code is not complete, requires: mapping; turn adjustments to value / gain etc - in lab testing needed to get accurate 90 deg turns; Logic error in code in final run statement, home test showed it to get stuck when reaching a wall
 
 # The rest of the code is functional
 
