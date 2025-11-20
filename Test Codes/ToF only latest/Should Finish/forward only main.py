@@ -281,7 +281,7 @@ def PID_Drive_Step(left_mm, right_mm):
 # ===== Drive Functions =====
 
 # - Drive Forward Without Centering -
-def Drive_Forward_mm(dist_mm, front_safety_mm=5):
+def Drive_Forward_mm(dist_mm, front_safety_mm=25):
     global Left_Encoder_Count, Right_Encoder_Count
     
     start_L = Left_Encoder_Count
@@ -315,8 +315,8 @@ def Drive_Forward_mm(dist_mm, front_safety_mm=5):
         
     Motor_Stop()
     
-# - Drive Backwards Without Centering -
-def Drive_Back_mm(dist_mm, front_safety_mm=5):
+# - Drive Backwards Without Centering (Seems to be slower than forward for some reason, though this isnt often needed so it is fine as is) -
+def Drive_Back_mm(dist_mm, front_safety_mm=25):
     global Left_Encoder_Count, Right_Encoder_Count
     
     start_L = Left_Encoder_Count
@@ -360,6 +360,7 @@ def Drive_Until_Front(target_mm):
 
 
 # ===== Finish Area =====
+# ----- Start Of Nephi Section -----
 
 # - Required Data -
 front_turn_history = []  # list of distances after front-caused turns
@@ -372,7 +373,7 @@ def Record_Front_Turn_Distance(d_mm):
     if len(front_turn_history) > 3:
         front_turn_history.pop(0)
 
-# - Finish? -
+# - Finish -
 def Finish_Condition():
     if len(front_turn_history) < 3:
         return False
@@ -386,7 +387,7 @@ def Finish_Condition():
 
     return within(a) and within(b) and within(c)
 
-# - Do If Finished -
+# - Finished -
 def Finish_Sequence():
     """
     When finish is detected:
@@ -434,10 +435,10 @@ def Finish_Sequence():
         Motor_Stop()
         time.sleep(1)
 
+# ----- End Of Nephi Section -----
 
 # ===== Turns =====
-
-# - Detect Front Wall -
+                            
 def Handle_Front_Wall(front_mm):
     global previous_left, previous_right
 
@@ -487,8 +488,7 @@ def Handle_Front_Wall(front_mm):
         
         
 # ===== Left / Right Turning When Detected =====
-
-# - Right Turn Sequenced -
+                                
 def Wall_Right_Turn():
     print("Turning Right")
     
@@ -510,8 +510,6 @@ def Wall_Right_Turn():
     Motor_Stop()
     time.sleep(0.5)
 
-    
-# - Left Turn Sequenced -
 def Wall_Left_Turn():
     print("Turning Left")
     
@@ -534,9 +532,8 @@ def Wall_Left_Turn():
     time.sleep(0.5)
     
     
-# ===== Wall Detection =====
-
-# - Wall Value Significantly Increased -
+# ===== Wall Gap Detection =====
+                                                        
 def detect_corner_or_wall_change(current, previous):
     if previous is None:
         return False, current
@@ -576,8 +573,6 @@ def Startup_Sequence():
 
 print("Starting Maze Solving Robot (Right Wall Following)")
 
-corner_passing = False  
-
 try:
     while True:
         front_mm = Read_Front_mm()
@@ -591,17 +586,16 @@ try:
             Handle_Front_Wall(front_mm)
             continue
 
+        # - Required for detecting left and right turns -
         right_triggered, previous_right = detect_corner_or_wall_change(right_mm, previous_right)
         left_triggered, previous_left   = detect_corner_or_wall_change(left_mm, previous_left)
 
         # code to make robot run here
         
-        
-        
-        #drive forward PID
+        # if wall do x
+        # solve maze        
         
         PID_Drive_Step(left_mm, right_mm)
-
         time.sleep(0.01)
 
 except KeyboardInterrupt:
