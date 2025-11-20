@@ -10,7 +10,6 @@ from vl6180x import VL6180X
 # ===== Settings =====
 
 MAX_PWM = 65535
-Soft_PWM_Limit = 25000
 Min_PWM = 10000
 TARGET_RPS = 15
 
@@ -532,26 +531,6 @@ def Wall_Left_Turn():
     time.sleep(0.5)
     
     
-# ===== Wall Gap Detection =====
-                                                        
-def detect_corner_or_wall_change(current, previous):
-    if previous is None:
-        return False, current
-
-    if current <= 0 or current > 200:
-        return False, current
-    
-    delta = current - previous
-
-    corner = delta >= Min_Increase
-    
-    wall_appear = delta <= -Min_Increase
-
-    triggered = corner or wall_appear
-
-    return triggered, current
-
-
 # ===== Startup =====
 
 def Startup_Sequence():
