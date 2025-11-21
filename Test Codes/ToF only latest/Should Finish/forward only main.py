@@ -456,8 +456,8 @@ def Handle_Front_Wall(front_mm):
 
     print("Side distances: L =", left_mm, "mm   R =", right_mm, "mm")
 
-    RIGHT_OPEN = (right_mm > 0 and right_mm > Wall_Threshold)
-    LEFT_OPEN  = (left_mm  > 0 and left_mm  > Wall_Threshold)
+    RIGHT_OPEN = right_mm > Wall_Threshold
+    LEFT_OPEN  = left_mm  > Wall_Threshold
 
     if RIGHT_OPEN:
         print("→ Turning RIGHT (right side open)")
@@ -530,7 +530,7 @@ def Wall_Left_Turn():
     Motor_Stop()
     time.sleep(0.5)
     
-    
+       
 # ===== Startup =====
 
 def Startup_Sequence():
@@ -552,13 +552,13 @@ def Startup_Sequence():
 
 print("Starting Maze Solving Robot (Right Wall Following)")
 
+Startup_Sequence()
+
 try:
     while True:
         front_mm = Read_Front_mm()
         left_mm  = Read_Left_mm()
         right_mm = Read_Right_mm()
-        
-        Startup_Sequence()
         
         if 0 < front_mm <= Min_Front_Dist:
             Motor_Stop()
@@ -587,5 +587,4 @@ finally:
 # ===== END =====
         
 
-        
 
