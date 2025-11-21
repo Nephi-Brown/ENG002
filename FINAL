@@ -1,0 +1,138 @@
+import time
+
+matrix = [[0 for _ in range(20)] for _ in range(20)]
+for i in range(20):
+    for j in range(20):
+        if i == 0 or i == 19 or j == 0 or j == 19: 
+            matrix[i][j] = 11
+         
+
+def print_matrix():
+    for i in range(len(matrix)):
+        row = ""
+        for j in range(len(matrix[i])):
+            if i == x and j == y:
+                row += " R "   
+            else:
+                row += f"{matrix[i][j]:2} "
+        print(row)
+    print()
+    
+    
+Up: (-1,0)
+Down: (1,0)
+Left: (0,-1)
+Right: (0,1)
+
+x, y = 1, 5
+dx, dy = 1, 0
+
+def turnleft():
+    global dx, dy
+    dx, dy = -dy, dx
+    
+def turnright():
+    global dx, dy
+    dx, dy = dy, -dx
+    
+    
+def movefoward():
+    global x, y, dx, dy
+    x += dx
+    y += dy
+   
+    if matrix[x][y] == 0:
+        matrix[x][y] = 2
+    elif matrix[x][y] == 2:
+        matrix[x][y] = 4
+    else:
+        matrix[x][y] = matrix[x][y] + 2
+    
+
+def wallcheckDiLeft():
+    global x, y, dy, dx
+    sensor = Pin(15, Pin.IN)  #set GPIO-25 pin mode as INPUT
+
+    if sensor.value() == 0:  #read the value of the sensor pin and compare it with 0
+        matrix[x+dx][y-dx] = 0
+    elif sensor.value() == 1:
+        matrix[x+dx][y-dx] = 11
+        
+def wallcheckDiright():
+    global x, y, dy, dx
+    sensor = Pin(0, Pin.IN)  #set GPIO-25 pin mode as INPUT
+
+    if sensor.value() == 0:  #read the value of the sensor pin and compare it with 0
+        matrix[x+dx][y+dx] = 0
+    elif sensor.value() == 1:
+        matrix[x+dx][y-dx] = 11
+
+         
+def lookaround():
+        global x, y , movepos, cell_Dileft, cell_Diright, cell_below, cell_infront
+        # Forward
+        fx = x + dx
+        fy = y + dy
+
+        # Forward-right
+        frx = x + dx + dy
+        fry = y + dy - dx
+
+        # Forward-left
+        flx = x + dx - dy
+        fly = y + dy + dx
+
+        cell_infront = matrix[fx][fy]
+        cell_Diright = matrix[frx][fry]   # forward-right
+        cell_Dileft  = matrix[flx][fly]   # forward-left
+
+        movepos = [
+        (cell_Diright, 'right'),
+        (cell_Dileft, 'left'),
+        (cell_infront, 'foward')
+    ]
+
+
+        movepos.sort()
+      
+    
+def pathfind():
+     global x, y, movepos, cell_Dileft, cell_Diright, cell_infront
+ 
+     
+     lookaround()
+     
+     value, direction = movepos[0]
+     
+     
+     
+     if value == 11:
+         turnright()
+         turnright()
+         movefoward()
+     if direction == 'foward':
+         movefoward()
+     elif direction == 'right':
+         turnright()
+         movefoward()
+     elif direction == 'left':
+         turnleft()
+         movefoward()
+        
+
+while True:
+    for i in range(2):
+        pathfind()
+        print_matrix()
+        time.sleep(2)
+        
+    
+    
+    
+    
+    
+         
+    
+    
+    
+    
