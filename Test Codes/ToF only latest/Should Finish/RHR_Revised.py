@@ -1,5 +1,6 @@
 from machine import I2C, SoftI2C, Pin, PWM
 import time
+import math
 
 from vl53l0x import VL53L0X
 from vl6180x import VL6180X
@@ -92,17 +93,51 @@ def Motor_Stop():
     Left_Motor_Set(0)
     Right_Motor_Set(0)
 
-def Left_Turn(speed=Turn_Speed, duration=Turn_Time):
-    Left_Motor_Set(speed)
-    Right_Motor_Set(-speed)
-    time.sleep(duration)
-    Motor_Stop()
 
-def Right_Turn(speed=Turn_Speed, duration=Turn_Time):
-    Left_Motor_Set(-speed)
-    Right_Motor_Set(speed)
-    time.sleep(duration)
+def Left_Turn_90():
+    global Left_Encoder_Count, Right_Encoder_Count
+
+    TURN_MM = (math.pi * 100.0) / 4.0
+    TARGET_COUNTS = int(TURN_MM * COUNTS_PER_MM)
+
+    start_L = Left_Encoder_Count
+    start_R = Right_Encoder_Count
+
+    while True:
+        dL = abs(Left_Encoder_Count - start_L)
+        dR = abs(Right_Encoder_Count - start_R)
+
+        if dL >= TARGET_COUNTS and dR >= TARGET_COUNTS:
+            break
+
+        Left_Motor_Set(-Turn_Speed)
+        Right_Motor_Set(Turn_Speed)
+
     Motor_Stop()
+    time.sleep(0.1)
+
+
+def Right_Turn_90():
+    global Left_Encoder_Count, Right_Encoder_Count
+    TURN_MM = (math.pi * 100) / 4.0
+    TARGET_COUNTS = int(TURN_MM * COUNTS_PER_MM)
+
+    start_L = Left_Encoder_Count
+    start_R = Right_Encoder_Count
+
+    while True:
+        dL = abs(Left_Encoder_Count - start_L)
+        dR = abs(Right_Encoder_Count - start_R)
+
+        if dL >= TARGET_COUNTS and dR >= TARGET_COUNTS:
+            break
+
+        Left_Motor_Set(Turn_Speed)
+        Right_Motor_Set(-Turn_Speed)
+
+    Motor_Stop()
+    time.sleep(0.1)
+    
     
 
 # ===== Encoder Setup =====
@@ -513,11 +548,11 @@ try:
         left_triggered, previous_left   = detect_corner_or_wall_change(left_mm, previous_left)
 
         if right_triggered:
-            Right_Turn()
+            Wall_Right_Turn()
             continue
         
         if left_triggered:
-            Drive_Forward_mm(140)
+            Drive_Forward_mm(Drive_Grid)
             continue
   
         PID_Drive_Step(left_mm, right_mm)
