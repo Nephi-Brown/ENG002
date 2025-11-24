@@ -183,23 +183,19 @@ class PID:
         self.integral = 0.0
         self.last_error = 0.0
         self.integral_limit = integral_limit
-
+        
     def compute(self, target, measurement, dt):
-        if dt <= 0:
-            dt = 1e-6
+        if dt <= 0: dt = 1e-6
         error = target - measurement
         self.integral += error * dt
-
+        
         if self.integral_limit:
-            self.integral = _clamp(self.integral,
-                                   -self.integral_limit,
-                                   self.integral_limit)
-
+            self.integral = _clamp(self.integral, -self.integral_limit, self.integral_limit)
+        
         derivative = (error - self.last_error) / dt
         self.last_error = error
-
-        return int(self.Kp * error + self.Ki * self.integral + self.Kd * derivative)
-
+        
+        return int(self.Kp*error + self.Ki*self.integral + self.Kd*derivative)
 
 Left_PID = PID(2000, 50, 0, integral_limit=10000)
 Right_PID = PID(2000, 50, 0, integral_limit=10000)
@@ -305,72 +301,66 @@ def detect_corner_or_wall_change(current, previous):
 last_L = last_R = 0
 last_time = time.ticks_ms()
 
-
 def PID_Drive_Step(left_mm, right_mm):
     global last_L, last_R, last_time
-
+    
     now = time.ticks_ms()
     dt = time.ticks_diff(now, last_time) / 1000.0
-    if dt < PID_Interval:
-        return
+    if dt < PID_INTERVAL: return
     last_time = now
-
+    
     Left_Counts = Left_Encoder_Count - last_L
     Right_Counts = Right_Encoder_Count - last_R
     last_L = Left_Encoder_Count
     last_R = Right_Encoder_Count
-
+    
     Left_PWM = Left_PID.compute(TARGET_RPS, Left_Counts, dt)
     Right_PWM = Right_PID.compute(TARGET_RPS, Right_Counts, dt)
-
-    Left_Motor_Set(Left_PWM)
-    Right_Motor_Set(Right_PWM)
-
-    # Side wall centering
-    if left_mm > 0 and right_mm > 0:
-        side_error = left_mm - right_mm
-        steering = 80 * side_error
-
-        steering = _clamp(steering, -15000, 15000)
-
-        Left_Motor_Set(_clamp(Left_PWM - steering, -MAX_PWM, MAX_PWM))
-        Right_Motor_Set(_clamp(Right_PWM + steering, -MAX_PWM, MAX_PWM))
+    
+    side_error = left_mm - right_mm
+    steering = CENTER_GAIN * side_error
+        
+    steering = _clamp(steering, -MAX_STEER, MAX_STEER)
+        
+    Left_Motor_Set(_clamp(Left_PWM - steering, -MAX_PWM, MAX_PWM))
+    Right_Motor_Set(_clamp(Right_PWM + steering, -MAX_PWM, MAX_PWM))
 
 
 # ===== Drive Functions =====
 
 # - Drive Forward Without Centering -
-def Drive_Forward_mm(dist_mm, front_safety_mm=25):
+def Drive_Forward_mm(dist_mm, front_safety_mm=30):
+    
+    if dist_mm < 0:
+        return Drive_Back_mm(-dist_mm)
+    
     global Left_Encoder_Count, Right_Encoder_Count
-
+    
     start_L = Left_Encoder_Count
     start_R = Right_Encoder_Count
-    Target_Counts = abs(dist_mm * COUNTS_PER_MM)
-
-    direction = 1 if dist_mm >= 0 else -1
-
+    Target_Counts = dist_mm * COUNTS_PER_MM   
+    
     while True:
         dL = abs(Left_Encoder_Count - start_L)
         dR = abs(Right_Encoder_Count - start_R)
         avg_counts = (dL + dR) / 2.0
         if avg_counts >= Target_Counts:
             break
-
+        
         front_mm = Read_Front_mm()
-
         if 0 < front_mm <= front_safety_mm:
             break
 
-        Left_PWM = direction * Left_PID.compute(TARGET_RPS, dL, 0.01)
-        Right_PWM = direction * Right_PID.compute(TARGET_RPS, dR, 0.01)
+        Left_PWM = Left_PID.compute(TARGET_RPS, dL, 0.01)
+        Right_PWM = Right_PID.compute(TARGET_RPS, dR, 0.01)
 
-        Left_PWM = max(0, Left_PWM)
-        Right_PWM = max(0, Right_PWM)
+        Left_PWM = _clamp(Left_PWM, 0, MAX_PWM)
+        Right_PWM = _clamp(Right_PWM, 0, MAX_PWM)
 
         Left_Motor_Set(Left_PWM)
         Right_Motor_Set(Right_PWM)
 
-        time.sleep(0.01)
+        time.sleep(PID_INTERVAL)
 
     Motor_Stop()
 
