@@ -107,7 +107,7 @@ def Left_Turn_90():
         dL = abs(Left_Encoder_Count - start_L)
         dR = abs(Right_Encoder_Count - start_R)
 
-        if dL >= TARGET_COUNTS and dR >= TARGET_COUNTS:
+        if dL >= TARGET_COUNTS or dR >= TARGET_COUNTS:
             break
 
         Left_Motor_Set(-Turn_Speed)
@@ -129,7 +129,7 @@ def Right_Turn_90():
         dL = abs(Left_Encoder_Count - start_L)
         dR = abs(Right_Encoder_Count - start_R)
 
-        if dL >= TARGET_COUNTS and dR >= TARGET_COUNTS:
+        if dL >= TARGET_COUNTS or dR >= TARGET_COUNTS:
             break
 
         Left_Motor_Set(Turn_Speed)
@@ -449,22 +449,19 @@ def Handle_Front_Wall(front_mm):
     LEFT_OPEN  = left_mm  > Wall_Threshold
 
     if RIGHT_OPEN:
-        print("→ Turning RIGHT (right side open)")
-        Right_Turn()
+        print(" Turning RIGHT ")
+        Right_Turn_90()
         time.sleep(0.5)
 
     elif LEFT_OPEN:
-        print("→ Turning LEFT (left side open)")
-        Left_Turn()
+        print(" Turning LEFT ")
+        Left_Turn_90()
         time.sleep(0.5)
 
     else:
-        print("→ Dead end → About Turn (180°)")
-        Right_Turn()
+        print(" Dead end, Right Turn 90")
+        Right_Turn_90()
         time.sleep(0.5)
-        Right_Turn()
-        time.sleep(0.5)
-
     return
         
         
@@ -479,7 +476,7 @@ def Wall_Right_Turn():
     Motor_Stop()
     time.sleep(0.5)
     
-    Right_Turn()
+    Right_Turn_90()
     time.sleep(0.5)
     
     Motor_Stop()
@@ -500,7 +497,7 @@ def Wall_Left_Turn():
     Motor_Stop()
     time.sleep(0.5)
     
-    Left_Turn()
+    Left_Turn_90()
     time.sleep(0.5)
     
     Motor_Stop()
@@ -539,13 +536,12 @@ try:
         left_mm  = Read_Left_mm()
         right_mm = Read_Right_mm()
         
-        if 0 < front_mm <= Min_Front_Dist:
-            Motor_Stop()
-            Handle_Front_Wall(front_mm)
-            continue
-
         right_triggered, previous_right = detect_corner_or_wall_change(right_mm, previous_right)
         left_triggered, previous_left   = detect_corner_or_wall_change(left_mm, previous_left)
+        
+        if 0 < front_mm <= Min_Front_Dist:
+            Handle_Front_Wall(front_mm)
+            continue
 
         if right_triggered:
             Wall_Right_Turn()
@@ -554,9 +550,10 @@ try:
         if left_triggered:
             Drive_Forward_mm(Drive_Grid)
             continue
-  
-        PID_Drive_Step(left_mm, right_mm)
-        time.sleep(0.01)
+        
+        if 0 < front_mm > Min_Front_Dist:
+            PID_Drive_Step(left_mm, right_mm)
+            continue
 
 except KeyboardInterrupt:
     print("Stopped by user.")
