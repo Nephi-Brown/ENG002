@@ -410,17 +410,56 @@ def Drive_Back_mm(dist_mm):
 
 
 # - Drive Forward Until Front Distance To A Wall Is X mm -
-def Drive_Until_Front(target_mm):
+def Drive_Until_Front_mm, (dist_mm, front_safety_mm=30):
+    
+    global Left_Encoder_Count, Right_Encoder_Count
+    
+    start_L = Left_Encoder_Count
+    start_R = Right_Encoder_Count
+    Target_Counts = dist_mm * COUNTS_PER_MM 
+    
+    prev_L = start_L
+    prev_R = start_R
+    prev_time = time.ticks_ms()
+    
+    front_mm = Read_Front_mm()
+    target_mm = front_mm - dist_mm
+    
     while True:
+        dL = abs(Left_Encoder_Count - start_L)
+        dR = abs(Right_Encoder_Count - start_R)
+        avg_counts = (dL + dR) / 2.0
+        if avg_counts >= Target_Counts:
+            break
+        
         front_mm = Read_Front_mm()
-        left_mm  = Read_Left_mm()
-        right_mm = Read_Right_mm()
-
+        if 0 < front_mm <= front_safety_mm:
+            break
+        
         if front_mm > 0 and front_mm <= target_mm:
             break
+        
+        now = time.ticks_ms()
+        dt = time.ticks_diff(now, prev_time) / 1000.0
+        if dt <= 0:
+            dt = PID_INTERVAL
+        prev_time = now
+        
+        delta_L = Left_Encoder_Count - prev_L
+        delta_R = Right_Encoder_Count - prev_R
+        prev_L = Left_Encoder_Count
+        prev_R = Right_Encoder_Count
 
-        PID_Drive_Step(left_mm, right_mm)
-        time.sleep(0.01)
+        Left_PWM = Left_PID.compute(TARGET_RPS, delta_L, dt)
+        Right_PWM = Right_PID.compute(TARGET_RPS, delta_R, dt)
+
+        Left_PWM = _clamp(Left_PWM, 0, MAX_PWM)
+        Right_PWM = _clamp(Right_PWM, 0, MAX_PWM)
+
+        Left_Motor_Set(Left_PWM)
+        Right_Motor_Set(Right_PWM)
+
+        time.sleep(PID_INTERVAL)
 
     Motor_Stop()
 
@@ -548,10 +587,10 @@ try:
             continue
         
         if left_triggered:
-            Drive_Forward_mm(Drive_Grid)
+            Drive_Until_Front_mm(Drive_Grid)
             continue
         
-        if 0 < front_mm > Min_Front_Dist:
+        if front_mm > Min_Front_Dist:
             PID_Drive_Step(left_mm, right_mm)
             continue
 
