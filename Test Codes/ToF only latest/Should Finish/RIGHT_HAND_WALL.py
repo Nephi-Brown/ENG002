@@ -14,13 +14,13 @@ TARGET_RPS = 20
 
 PID_INTERVAL = 0.005
 
-Kp = 400
-Ki = 10
+Kp = 2000
+Ki = 50
 Kd = 0
 
-CENTER_GAIN = 50
+CENTER_GAIN = 100
 
-MAX_STEER = 5000
+MAX_STEER = 10000
 
 previous_left = None
 previous_right = None
