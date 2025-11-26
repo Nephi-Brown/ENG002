@@ -450,7 +450,7 @@ def detect_corner_or_wall_change(current, previous):
     delta = current - previous
 
     corner = delta >= MIN_INCREASE
-    wall_appear = delta <= -MIN_INCREASE
+    wall_appear = current >= WALL_THRESHOLD
 
     triggered = corner or wall_appear
 
