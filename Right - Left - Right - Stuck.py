@@ -50,9 +50,9 @@ TURN_SCALE_LEFT  = 1.77
 TURN_SCALE_LEFT_OPEN = 1.76
 TURN_SCALE_LEFT_CLOSED = 1.77
 
-TURN_SCALE_RIGHT = 1.65
-TURN_SCALE_RIGHT_OPEN = 1.64
-TURN_SCALE_RIGHT_CLOSED = 1.65
+TURN_SCALE_RIGHT = 1.66
+TURN_SCALE_RIGHT_OPEN = 1.65
+TURN_SCALE_RIGHT_CLOSED = 1.66
 
 MIN_FRONT_DIST_NORMAL = 60      # mm: if front distance below this, handle front wall
 MIN_FRONT_DIST_TURN = 45
@@ -509,7 +509,7 @@ def Wall_Turn_Right():
     Motor_Stop()
     time.sleep(0.25)
     
-    Drive_Forward_mm_Crashable(25)
+    Drive_Forward_mm_Crashable(20)
     time.sleep(0.25)
     
     Reset_State()
@@ -552,7 +552,7 @@ def Wall_Turn_Right():
     Right_Close()
     time.sleep(0.25)
     
-    Drive_Forward_mm_Crashable(25)
+    Drive_Forward_mm_Crashable(20)
     time.sleep(0.25)
     
     Motor_Stop()
@@ -584,9 +584,9 @@ def Handle_Front_Wall(front_mm):
         time.sleep(0.25)
         Turn_Right_90()
         time.sleep(0.5)
+        Reset_State()
         Drive_Forward_mm(130)
         TURN_SCALE_RIGHT = TURN_SCALE_RIGHT_CLOSED
-        Reset_State()
         time.sleep(0.25)
     elif LEFT_OPEN:
         TURN_SCALE_LEFT = TURN_SCALE_LEFT_OPEN
@@ -596,9 +596,9 @@ def Handle_Front_Wall(front_mm):
         time.sleep(0.25)
         Turn_Left_90()
         time.sleep(0.5)
+        Reset_State()
         Drive_Forward_mm(130)
         TURN_SCALE_LEFT = TURN_SCALE_LEFT_CLOSED
-        Reset_State()
         time.sleep(0.25)
     else:
         # dead end: default to left turn
