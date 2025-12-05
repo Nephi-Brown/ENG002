@@ -739,7 +739,7 @@ try:
         left_close_triggered, previous_left = Detect_Wall_Decrease(left_mm, previous_left)
 
         if 0 < front_mm <= MIN_FRONT_DIST:
-            Drive_Forward_mm_Crashable(10)
+            Drive_Forward_mm_Crashable(5)
             time.sleep(0.05)
             Motor_Stop()
             Handle_Front_Wall(front_mm)
