@@ -1,0 +1,101 @@
+
+try:
+    Reset_State()
+    
+    while True:
+        front_mm = Read_Front_mm()
+        left_mm  = Read_Left_mm()
+        right_mm = Read_Right_mm()
+        
+        Map_Tick_Stepper_ToF(front_mm)
+        
+        # ======== WALL MAPPING ========
+
+        # FRONT cell
+        if 0 < front_mm <= 80:
+            fx = x + dx
+            fy = y + dy
+            matrix[fx][fy] = 11
+
+        # LEFT cell  (-dy, +dx)
+        if 0 < left_mm <= 80:
+            lx = x - dy
+            ly = y + dx
+            matrix[lx][ly] = 11
+
+        # RIGHT cell  (+dy, -dx)
+        if 0 < right_mm <= 80:
+            rx = x + dy
+            ry = y - dx
+            matrix[rx][ry] = 11
+        
+        # ======== SENSOR RAW VALUES ========
+        raw_front_mm = front_mm
+        raw_left_mm  = left_mm
+        raw_right_mm = right_mm
+        
+        right_mm = _clamp(right_mm, 15, 255)
+        left_mm  = _clamp(left_mm, 15, 255)
+        front_mm = _clamp(front_mm, 20, 1200)
+
+        # ======== WALL DETECTION ========
+        right_triggered, previous_right = Detect_Wall(right_mm, previous_right)
+        right_close_triggered, previous_right = Detect_Wall_Decrease(right_mm, previous_right)
+        left_close_triggered, previous_left = Detect_Wall_Decrease(left_mm, previous_left)
+
+        # ======== FRONT STOP ========
+        if 0 < front_mm <= MIN_FRONT_DIST:
+            Motor_Stop()
+            Handle_Front_Wall(front_mm)
+            continue
+        
+        # ======== SIDE WALL CLOSE ========
+        if right_close_triggered:
+            Left_Straight_Turn_Small()
+            Reset_State()
+            continue
+            
+        if left_close_triggered:
+            Right_Straight_Turn_Small()
+            Reset_State()
+            continue
+        
+        # ======== TOO CLOSE (EMERGENCY ALIGN) ========
+        if raw_left_mm > 0 and raw_left_mm <= 10:
+            Right_Straight_Turn()
+            Drive_Forward_mm(2)
+            Reset_State()
+            continue
+            
+        if raw_right_mm > 0 and raw_right_mm <= 10:
+            Left_Straight_Turn()
+            Drive_Forward_mm(2)
+            Reset_State()
+            continue
+        
+        # ======== RIGHT WALL DISAPPEARED TURN ========
+        if right_triggered:
+            right_trigger_active = True
+            MIN_FRONT_DIST = MIN_FRONT_DIST_TURN
+            
+            Motor_Stop()
+            Reset_State()
+            time.sleep(0.5)
+            Wall_Turn_Right()
+            
+            MIN_FRONT_DIST = MIN_FRONT_DIST_NORMAL
+            right_trigger_active = False
+            continue
+
+        # ======== FORWARD PID DRIVE ========
+        new_right_mm = Read_Right_mm()
+        new_right_mm = _clamp(new_right_mm, 15, 180)
+        
+        PID_Drive(new_right_mm)
+        time.sleep(0.01)
+
+except KeyboardInterrupt:
+    print("Stopped by user.")
+finally:
+    Motor_Stop()
+    print("Shutdown complete")
